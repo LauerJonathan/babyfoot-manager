@@ -4,7 +4,6 @@ const dotenv = require('dotenv');
 
 dotenv.config();
 
-// Fonction pour créer la base de données si elle n'existe pas
 async function createDatabaseIfNotExists() {
   try {
     // Connexion sans spécifier de base de données
