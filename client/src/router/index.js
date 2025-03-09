@@ -4,8 +4,9 @@ import Home from "../views/HomePage.vue";
 import Matches from "../views/Matches.vue";
 import Results from "../views/Results.vue";
 import Registration from "../views/Registration.vue";
-import Admin from "../views/Admin.vue";
-import { authService } from "../services/auth";
+import AdminLogin from "../views/AdminLogin.vue";
+import AdminLayout from "../views/admin/adminLayout.vue";
+import authStore from "../store/auth"; // Import du service d'authentification
 
 const routes = [
   // Routes publiques
@@ -20,11 +21,6 @@ const routes = [
     component: Matches,
   },
   {
-    path: "/admin/login",
-    name: "adminLogin",
-    component: () => import("../views/AdminLogin.vue"),
-  },
-  {
     path: "/results",
     name: "results",
     component: Results,
@@ -34,12 +30,39 @@ const routes = [
     name: "register",
     component: Registration,
   },
-  // Routes privées
+  {
+    path: "/admin/login",
+    name: "adminLogin",
+    component: AdminLogin,
+  },
+
+  // Routes d'administration (protégées)
   {
     path: "/admin",
-    name: "admin",
-    component: Admin,
+    component: AdminLayout,
     meta: { requiresAuth: true },
+    children: [
+      {
+        path: "",
+        name: "adminDashboard",
+        component: () => import("../views/admin/Dashboard.vue"),
+      },
+      {
+        path: "tournaments",
+        name: "adminTournaments",
+        component: () => import("../views/admin/Tournaments.vue"),
+      },
+      {
+        path: "teams",
+        name: "adminTeams",
+        component: () => import("../views/admin/Teams.vue"),
+      },
+      {
+        path: "results",
+        name: "adminResults",
+        component: () => import("../views/admin/Results.vue"),
+      },
+    ],
   },
 ];
 
@@ -50,7 +73,7 @@ const router = createRouter({
 
 router.beforeEach((to, from, next) => {
   // Si l'utilisateur essaie d'accéder à la page de connexion alors qu'il est déjà connecté
-  if (to.path === "/admin/login" && authService.isAuthenticated()) {
+  if (to.path === "/admin/login" && authStore.state.isAuthenticated) {
     // Rediriger vers le tableau de bord admin
     next({ path: "/admin" });
     return;
@@ -59,7 +82,7 @@ router.beforeEach((to, from, next) => {
   // Vérifier si la route nécessite une authentification
   if (to.matched.some((record) => record.meta.requiresAuth)) {
     // Vérifier si l'utilisateur est connecté
-    if (!authService.isAuthenticated()) {
+    if (!authStore.state.isAuthenticated) {
       // Si non connecté, rediriger vers la page de connexion
       next({
         path: "/admin/login",

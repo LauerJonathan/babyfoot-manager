@@ -2,6 +2,77 @@ const { Match, Team, Tournament, TournamentTeam } = require("../models");
 const { sequelize } = require("../config/database");
 const { Op } = require("sequelize");
 
+const getUpcomingWeekMatches = async (req, res) => {
+  try {
+    // Date actuelle
+    const today = new Date();
+
+    // Date dans 7 jours
+    const nextWeek = new Date();
+    nextWeek.setDate(today.getDate() + 7);
+
+    const upcomingMatches = await Match.findAll({
+      where: {
+        playedDate: {
+          [Op.gte]: today, // Op.gte signifie "greater than or equal to"
+          [Op.lte]: nextWeek, // Op.lte signifie "less than or equal to"
+        },
+      },
+      order: [["playedDate", "ASC"]], // Tri par date croissante
+    });
+
+    res.status(200).json({
+      success: true,
+      count: upcomingMatches.length,
+      data: upcomingMatches,
+    });
+  } catch (error) {
+    console.error("Erreur récupération des matchs à venir:", error);
+    res.status(500).json({
+      success: false,
+      message:
+        "Erreur lors de la récupération des matchs pour la semaine à venir",
+      error: error.message,
+    });
+  }
+};
+
+const getPastWeekMatches = async (req, res) => {
+  try {
+    // Date actuelle
+    const today = new Date();
+    today.setHours(23, 59, 59, 999); // Fin de la journée actuelle
+
+    // Date il y a 7 jours
+    const lastWeek = new Date();
+    lastWeek.setDate(today.getDate() - 7);
+    lastWeek.setHours(0, 0, 0, 0); // Début de la journée il y a 7 jours
+
+    const pastMatches = await Match.findAll({
+      where: {
+        playedDate: {
+          [Op.gte]: lastWeek, // Matchs joués depuis 7 jours
+          [Op.lte]: today, // Jusqu'à aujourd'hui
+        },
+      },
+      order: [["playedDate", "ASC"]], // Tri par date croissante
+    });
+
+    res.status(200).json({
+      success: true,
+      count: pastMatches.length,
+      data: pastMatches,
+    });
+  } catch (error) {
+    console.error("Erreur récupération des matchs passés:", error);
+    res.status(500).json({
+      success: false,
+      message: "Erreur lors de la récupération des matchs des 7 derniers jours",
+      error: error.message,
+    });
+  }
+};
+
 // Récupérer tous les matchs
 const getAllMatch = async (req, res) => {
   try {
@@ -226,6 +297,74 @@ const updateMatchScore = async (req, res) => {
   }
 };
 
+// Obtenir le classement général
+const getGeneralStandings = async (req, res) => {
+  try {
+    // Récupérer toutes les équipes participant à des tournois
+    const allTeamStats = await TournamentTeam.findAll({
+      include: [{ model: Team }],
+    });
+
+    // Utiliser un Map pour regrouper les statistiques par équipe
+    const teamStatsMap = new Map();
+
+    // Agréger les statistiques pour chaque équipe
+    allTeamStats.forEach((stat) => {
+      const teamId = stat.teamId;
+
+      if (!teamStatsMap.has(teamId)) {
+        teamStatsMap.set(teamId, {
+          team: stat.Team,
+          totalPoints: 0,
+          totalMatchesPlayed: 0,
+          totalMatchesWon: 0,
+          totalMatchesLost: 0,
+          totalMatchesDraw: 0,
+          totalGoalsFor: 0,
+          totalGoalsAgainst: 0,
+          tournaments: 0,
+        });
+      }
+
+      const teamStats = teamStatsMap.get(teamId);
+      teamStats.totalPoints += stat.points;
+      teamStats.totalMatchesPlayed += stat.matchesPlayed;
+      teamStats.totalMatchesWon += stat.matchesWon;
+      teamStats.totalMatchesLost += stat.matchesLost;
+      teamStats.totalMatchesDraw += stat.matchesDraw;
+      teamStats.totalGoalsFor += stat.goalsFor;
+      teamStats.totalGoalsAgainst += stat.goalsAgainst;
+      teamStats.tournaments += 1;
+    });
+
+    // Convertir le Map en tableau et trier par points, puis par buts marqués
+    const generalStandings = Array.from(teamStatsMap.values()).sort((a, b) => {
+      // D'abord par points
+      if (b.totalPoints !== a.totalPoints) {
+        return b.totalPoints - a.totalPoints;
+      }
+      // Ensuite par buts marqués
+      if (b.totalGoalsFor !== a.totalGoalsFor) {
+        return b.totalGoalsFor - a.totalGoalsFor;
+      }
+      // Ensuite par différence de buts (moins de buts encaissés est mieux)
+      return a.totalGoalsAgainst - b.totalGoalsAgainst;
+    });
+
+    res.status(200).json({
+      success: true,
+      generalStandings,
+    });
+  } catch (error) {
+    console.error("Erreur récupération du classement général:", error);
+    res.status(500).json({
+      success: false,
+      message: "Erreur lors de la récupération du classement général",
+      error: error.message,
+    });
+  }
+};
+
 // Obtenir le classement d'un tournoi
 const getTournamentStandings = async (req, res) => {
   try {
@@ -267,8 +406,11 @@ const getTournamentStandings = async (req, res) => {
 };
 
 module.exports = {
+  getUpcomingWeekMatches,
+  getPastWeekMatches,
   getAllMatch,
   getTournamentMatches,
   updateMatchScore,
+  getGeneralStandings,
   getTournamentStandings,
 };

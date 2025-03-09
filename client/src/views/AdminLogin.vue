@@ -27,12 +27,15 @@
             placeholder="Entrez votre mot de passe" />
         </div>
 
-        <div v-if="error" class="error-message">
-          {{ error }}
+        <div v-if="authStore.state.error" class="error-message">
+          {{ authStore.state.error }}
         </div>
 
-        <button type="submit" class="login-button" :disabled="isLoading">
-          <span v-if="isLoading">Connexion en cours...</span>
+        <button
+          type="submit"
+          class="login-button"
+          :disabled="authStore.state.isLoading">
+          <span v-if="authStore.state.isLoading">Connexion en cours...</span>
           <span v-else>Se connecter</span>
         </button>
       </form>
@@ -41,30 +44,38 @@
 </template>
 
 <script setup>
-import { ref } from "vue";
-import { useRouter } from "vue-router";
+import { ref, onMounted } from "vue";
+import { useRouter, useRoute } from "vue-router";
+import authStore from "../store/auth";
 
 const router = useRouter();
+const route = useRoute();
+
 const username = ref("");
 const password = ref("");
-const error = ref("");
-const isLoading = ref(false);
+
+// Nettoyage des erreurs au montage du composant
+onMounted(() => {
+  authStore.clearError();
+});
+
+// Redirection si déjà authentifié
+onMounted(() => {
+  if (authStore.state.isAuthenticated) {
+    router.push("/admin");
+  }
+});
 
 const handleLogin = async () => {
-  error.value = "";
-  isLoading.value = true;
-
   try {
+    await authStore.login(username.value, password.value);
 
-    // Co example (temporis)
-    await new Promise((resolve) => setTimeout(resolve, 1000));
-
-    // Si la connexion réussit, rediriger vers le tableau de bord admin
-    router.push("/admin/dashboard");
+    // Si la connexion réussit, rediriger vers l'URL stockée dans query ou le dashboard par défaut
+    const redirectUrl = route.query.redirect || "/admin";
+    router.push(redirectUrl);
   } catch (err) {
-    error.value = "Erreur de connexion. Veuillez vérifier vos identifiants.";
-  } finally {
-    isLoading.value = false;
+    // Les erreurs sont déjà gérées dans le store
+    console.error("Erreur lors de la connexion:", err);
   }
 };
 </script>
@@ -76,6 +87,7 @@ const handleLogin = async () => {
   align-items: center;
   min-height: 100vh;
   padding: 20px;
+  margin-top: -100px;
   background-color: #f5f5f5;
 }
 

@@ -343,5 +343,30 @@ watch(
       fill="#2196f3">
       {{ match.awayScore ? match.awayScore : 0 }}
     </text>
+    <!-- Ajout du numéro de terrain en dessous du babyfoot -->
+    <g v-if="!score">
+      <!-- Fond du badge de terrain -->
+      <rect
+        x="350"
+        y="360"
+        width="100"
+        height="30"
+        rx="5"
+        fill="#121212"
+        stroke="#ef854d"
+        stroke-width="2" />
+
+      <!-- Texte du terrain -->
+      <text
+        x="400"
+        y="382"
+        font-family="Arial"
+        font-size="16"
+        font-weight="bold"
+        fill="#ffffff"
+        text-anchor="middle">
+        {{ match.location }}
+      </text>
+    </g>
   </svg>
 </template>

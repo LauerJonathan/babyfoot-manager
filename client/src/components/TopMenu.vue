@@ -1,11 +1,12 @@
 <template>
   <nav class="top-menu">
     <div class="logo-container">
-      <router-link to="/">
+      <router-link to="/" class="home-item menu-item">
         <img
           src="../assets/logoClem.png"
           class="mini-logo"
           alt="logo babyfoot" />
+        Accueil
       </router-link>
     </div>
     <div class="menu-items">
@@ -35,6 +36,11 @@
 }
 .menu-item {
   text-decoration: none;
+}
+.home-item {
+  display: flex;
+  align-items: center;
+  gap: 30px;
 }
 .top-menu {
   position: fixed;

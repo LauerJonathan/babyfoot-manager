@@ -11,6 +11,7 @@ ENV NODE_OPTIONS=--experimental-global-webcrypto
 COPY package*.json ./
 
 # Installer les dépendances
+RUN npm cache clean --force && npm install --no-cache
 RUN npm install
 
 # Copier les fichiers du projet

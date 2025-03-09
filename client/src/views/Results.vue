@@ -111,6 +111,8 @@ const matchesList = ref({
     },
   ],
 });
+import Podium from "../components/Podium.vue";
+import standings from "../components/standings.vue";
 </script>
 
 <template>
@@ -119,6 +121,10 @@ const matchesList = ref({
     <div class="card" v-for="match in matchesList.data" :key="match.id">
       <field :match="match" :score="true" />
     </div>
+  </section>
+  <section>
+    <h1>Classement général :</h1>
+    <standings />
   </section>
 </template>
 
@@ -135,5 +141,11 @@ const matchesList = ref({
   display: block;
   width: 30%;
   margin: 40px 0;
+}
+.standingInfos {
+  display: flex;
+  width: 90%;
+  margin: 0 auto;
+  gap: 50px;
 }
 </style>

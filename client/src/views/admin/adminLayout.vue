@@ -1,4 +1,3 @@
-<!-- AdminLayout.vue -->
 <template>
   <div class="admin-layout" :class="{ 'sidebar-collapsed': sidebarCollapsed }">
     <AdminSidebar @toggle-sidebar="handleSidebarToggle" />
@@ -32,7 +31,7 @@
 </template>
 
 <script>
-import AdminSidebar from "../components/AdminSidebar.vue";
+import AdminSidebar from "../../components/AdminSidebar.vue";
 
 export default {
   name: "AdminLayout",
@@ -95,7 +94,7 @@ export default {
   justify-content: space-between;
   align-items: center;
   box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
-  margin-top: -40px;
+  margin-top: -35px;
 }
 
 .page-title h1 {
