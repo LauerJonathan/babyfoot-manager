@@ -274,12 +274,17 @@
   bottom: 0;
   background-color: rgb(239, 133, 77);
   opacity: 0.4;
-  width: 50vh;
-  height: 50vh;
+  width: 20vh;
+  height: 20vh;
   border-radius: 50% 50% 0;
   display: flex;
   align-items: center;
   transition: 500ms;
+}
+
+.podium:hover {
+  width: 50vh;
+  height: 50vh;
 }
 
 .podium:hover {

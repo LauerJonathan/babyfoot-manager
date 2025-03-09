@@ -1,4 +1,3 @@
-// src/router/index.js
 import { createRouter, createWebHistory } from "vue-router";
 import Home from "../views/HomePage.vue";
 import Matches from "../views/Matches.vue";
@@ -74,22 +73,18 @@ const router = createRouter({
 router.beforeEach((to, from, next) => {
   // Si l'utilisateur essaie d'accéder à la page de connexion alors qu'il est déjà connecté
   if (to.path === "/admin/login" && authStore.state.isAuthenticated) {
-    // Rediriger vers le tableau de bord admin
     next({ path: "/admin" });
     return;
   }
 
   // Vérifier si la route nécessite une authentification
   if (to.matched.some((record) => record.meta.requiresAuth)) {
-    // Vérifier si l'utilisateur est connecté
     if (!authStore.state.isAuthenticated) {
-      // Si non connecté, rediriger vers la page de connexion
       next({
         path: "/admin/login",
         query: { redirect: to.fullPath }, // Stocke l'URL de destination
       });
     } else {
-      // Utilisateur connecté, autoriser l'accès
       next();
     }
   } else {

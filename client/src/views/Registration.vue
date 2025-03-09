@@ -7,27 +7,6 @@
     </p>
 
     <form @submit.prevent="submitForm" class="registration-form">
-      <!-- Sélection du tournoi -->
-      <div class="form-field">
-        <label for="tournamentSelect">Sélectionnez un tournoi *</label>
-        <select
-          id="tournamentSelect"
-          v-model="team.tournamentId"
-          required
-          :class="{ error: errors.tournamentId }">
-          <option value="" disabled>Choisir un tournoi</option>
-          <option
-            v-for="tournament in tournaments"
-            :key="tournament.id"
-            :value="tournament.id">
-            {{ tournament.name }} - {{ formatDate(tournament.startDate) }}
-          </option>
-        </select>
-        <span v-if="errors.tournamentId" class="error-message">{{
-          errors.tournamentId
-        }}</span>
-      </div>
-
       <!-- Nom de l'équipe -->
       <div class="form-field">
         <label for="teamName">Nom de l'équipe *</label>
@@ -76,24 +55,6 @@
             </span>
           </div>
         </div>
-      </div>
-
-      <!-- Email -->
-      <div class="form-field">
-        <label for="email">Email de contact *</label>
-        <input
-          id="email"
-          v-model="team.email"
-          type="email"
-          required
-          placeholder="equipe@example.com"
-          :class="{ error: errors.email }" />
-        <span v-if="errors.email" class="error-message">{{
-          errors.email
-        }}</span>
-        <p class="field-info">
-          Utilisé pour les communications importantes concernant le tournoi
-        </p>
       </div>
 
       <!-- Conditions -->
@@ -185,6 +146,8 @@
 </template>
 
 <script>
+import teamsStore from "../store/teamsStore";
+
 export default {
   name: "TeamRegistration",
   data() {
@@ -193,57 +156,26 @@ export default {
         name: "",
         player1Name: "",
         player2Name: "",
-        email: "",
         termsAccepted: false,
-        tournamentId: "", // Ajout de la propriété tournamentId
       },
       errors: {
         name: "",
         player1Name: "",
         player2Name: "",
-        email: "",
         termsAccepted: "",
-        tournamentId: "", // Ajout de la propriété d'erreur
       },
-      // Données simulées des tournois disponibles
-      tournaments: [
-        {
-          id: 1,
-          name: "Tournoi de Printemps",
-          startDate: "2025-04-15T09:00:00.000Z",
-          location: "Salle principale",
-          maxTeams: 16,
-        },
-        {
-          id: 2,
-          name: "Challenge Entreprises",
-          startDate: "2025-05-22T14:00:00.000Z",
-          location: "Espace loisirs",
-          maxTeams: 8,
-        },
-        {
-          id: 3,
-          name: "Coupe d'Été",
-          startDate: "2025-07-10T10:00:00.000Z",
-          location: "Salle principale",
-          maxTeams: 24,
-        },
-      ],
       isSubmitting: false,
       showConfirmation: false,
       showTermsModal: false,
     };
   },
-  methods: {
-    // Fonction pour formater les dates
-    formatDate(dateString) {
-      const date = new Date(dateString);
-      return date.toLocaleDateString("fr-FR", {
-        day: "2-digit",
-        month: "2-digit",
-        year: "numeric",
-      });
+  computed: {
+    // Accès au store d'équipes
+    teamsStore() {
+      return teamsStore;
     },
+  },
+  methods: {
     validateForm() {
       let isValid = true;
       // Reset errors
@@ -251,16 +183,8 @@ export default {
         name: "",
         player1Name: "",
         player2Name: "",
-        email: "",
         termsAccepted: "",
-        tournamentId: "", // Réinitialiser cette erreur
       };
-
-      // Validation du tournoi
-      if (!this.team.tournamentId) {
-        this.errors.tournamentId = "Veuillez sélectionner un tournoi";
-        isValid = false;
-      }
 
       // Team name validation
       if (!this.team.name.trim()) {
@@ -292,16 +216,6 @@ export default {
         isValid = false;
       }
 
-      // Email validation
-      const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-      if (!this.team.email.trim()) {
-        this.errors.email = "L'email est requis";
-        isValid = false;
-      } else if (!emailRegex.test(this.team.email)) {
-        this.errors.email = "Veuillez entrer une adresse email valide";
-        isValid = false;
-      }
-
       // Terms acceptance validation
       if (!this.team.termsAccepted) {
         this.errors.termsAccepted = "Vous devez accepter les règles du tournoi";
@@ -323,41 +237,51 @@ export default {
       this.isSubmitting = true;
 
       try {
-        // Simulate API call
-        await new Promise((resolve) => setTimeout(resolve, 1500));
+        // Utiliser le store pour créer l'équipe
+        await this.teamsStore.createTeam(this.team);
 
-        // Later, this will be replaced with actual API call:
-        // await this.$store.dispatch('teams/registerTeam', this.team);
+        // Vérifier si la création a réussi
+        if (this.teamsStore.state.registrationSuccess) {
+          // Afficher la modal de confirmation
+          this.showConfirmation = true;
 
-        console.log("Team registration data:", this.team);
-
-        // Show confirmation modal
-        this.showConfirmation = true;
-
-        // Reset form
-        this.team = {
-          name: "",
-          player1Name: "",
-          player2Name: "",
-          email: "",
-          termsAccepted: false,
-          tournamentId: "",
-        };
+          // Réinitialiser le formulaire
+          this.team = {
+            name: "",
+            player1Name: "",
+            player2Name: "",
+            termsAccepted: false,
+          };
+        }
       } catch (error) {
-        console.error("Registration error:", error);
-        // Handle error (will be implemented with real API)
+        console.error("Erreur d'inscription:", error);
+        // L'erreur est déjà gérée dans le store
       } finally {
         this.isSubmitting = false;
       }
     },
     closeConfirmation() {
       this.showConfirmation = false;
+      // Réinitialiser le statut de succès dans le store
+      this.teamsStore.resetRegistrationStatus();
     },
     showTerms() {
       this.showTermsModal = true;
     },
     closeTerms() {
       this.showTermsModal = false;
+    },
+  },
+  watch: {
+    // Observer les erreurs du store et les afficher si nécessaire
+    "teamsStore.state.error": {
+      handler(newError) {
+        if (newError) {
+          // Vous pourriez créer un système de notification ici
+          console.error("Erreur du store:", newError);
+        }
+      },
+      immediate: true,
     },
   },
 };

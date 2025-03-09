@@ -11,9 +11,9 @@ const router = express.Router();
 
 // Routes publiques
 router.get("/", getAllTeams);
+router.post("/", createTeam);
 
 // Routes protégées (administrateurs uniquement)
-router.post("/", authenticateAdmin, createTeam);
 router.post("/register", authenticateAdmin, addTeamToTournament);
 router.delete(
   "/:teamId/tournaments/:tournamentId",

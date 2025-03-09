@@ -19,7 +19,6 @@ const formatDate = (dateString) => {
   });
 };
 const checkWinner = () => {
-  // Vérifier si les scores existent
   if (props.match.homeScore === null || props.match.awayScore === null) {
     winner.value = "pending"; // Match pas encore joué
     return;

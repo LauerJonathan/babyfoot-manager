@@ -139,7 +139,6 @@
       <div class="chart tournamentChart">
         <h3>Activité des tournois</h3>
         <div class="chart-container">
-          <!-- Ici, nous simulerons un graphique avec une image ou du HTML basique -->
           <div class="chart-placeholder">
             <div class="bar-container">
               <div class="chart-label">Jan</div>
@@ -375,10 +374,7 @@ export default {
   },
   methods: {
     updateDashboard() {
-      // Cette méthode serait utilisée pour mettre à jour les données
-      // en fonction de la plage de temps sélectionnée
       console.log("Mise à jour du tableau de bord pour:", this.timeRange);
-      // Dans un environnement réel, on ferait un appel API ici
     },
     formatDate(dateString) {
       if (!dateString) return "";
@@ -401,7 +397,6 @@ export default {
     },
   },
   mounted() {
-    // Ici, vous pourriez charger les données initiales
     this.updateDashboard();
   },
 };
