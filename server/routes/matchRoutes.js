@@ -6,15 +6,15 @@ const {
   getTournamentStandings,
   getAllMatch,
   getGeneralStandings,
-  getUpcomingWeekMatches,
-  getPastWeekMatches,
+  getUpcomingFiveMatches,
+  getLastSixMatches,
 } = require("../controllers/matchController");
 
 const router = express.Router();
 
 // Routes publiques
-router.get("/upcoming-week", getUpcomingWeekMatches);
-router.get("/past-week-matches", getPastWeekMatches);
+router.get("/upcoming", getUpcomingFiveMatches);
+router.get("/previous", getLastSixMatches);
 router.get("/match", getAllMatch);
 router.get("/tournaments/:tournamentId", getTournamentMatches);
 router.get("/tournaments/:tournamentId/standings", getTournamentStandings);

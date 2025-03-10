@@ -163,7 +163,6 @@ const deleteTournament = async (req, res) => {
 const generateMatches = async (req, res) => {
   try {
     const { id } = req.params;
-
     const tournament = await Tournament.findByPk(id, {
       include: [{ model: Team }],
     });
@@ -197,15 +196,46 @@ const generateMatches = async (req, res) => {
     const teams = tournament.Teams;
     const matches = [];
 
+    // Date de début (à partir de la date du tournoi ou de demain si la date du tournoi est passée)
+    const tournamentDate = new Date(tournament.date);
+    const now = new Date();
+    let matchDate = new Date(tournamentDate);
+
+    // Si la date du tournoi est dans le passé, commencer à partir de demain
+    if (matchDate < now) {
+      matchDate = new Date();
+      matchDate.setDate(matchDate.getDate() + 1); // Commencer demain
+    }
+
+    // Réinitialiser l'heure à 9h du matin
+    matchDate.setHours(9, 0, 0, 0);
+
+    // Heures possibles pour les matchs (9h, 11h, 14h, 16h, 18h)
+    const matchHours = [9, 11, 14, 16, 18];
+    let hourIndex = 0;
+
     // Générer tous les matchs (chaque équipe rencontre toutes les autres une fois)
     for (let i = 0; i < teams.length; i++) {
       for (let j = i + 1; j < teams.length; j++) {
+        // Créer la date planifiée pour ce match
+        const scheduledDate = new Date(matchDate);
+        scheduledDate.setHours(matchHours[hourIndex], 0, 0, 0);
+
         matches.push({
           tournamentId: tournament.id,
           homeTeamId: teams[i].id,
           awayTeamId: teams[j].id,
           status: "scheduled",
+          scheduledDate: scheduledDate,
         });
+
+        // Passer à l'heure suivante
+        hourIndex = (hourIndex + 1) % matchHours.length;
+
+        // Si on a utilisé toutes les heures de la journée, passer au jour suivant
+        if (hourIndex === 0) {
+          matchDate.setDate(matchDate.getDate() + 1);
+        }
       }
     }
 

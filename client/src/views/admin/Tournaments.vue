@@ -69,11 +69,11 @@
           <button class="action-btn edit" @click="editTournament(tournament)">
             Modifier
           </button>
-          <button
-            class="action-btn view"
-            @click="viewTournament(tournament.id)">
+          <router-link
+            :to="`/admin/tournaments/${tournament.id}`"
+            class="action-btn view">
             Détails
-          </button>
+          </router-link>
           <button
             class="action-btn delete"
             @click="confirmDeleteTournament(tournament)"
@@ -200,7 +200,7 @@
 </template>
 
 <script>
-import tournamentStore from '../../store/tournamentStore';
+import tournamentStore from "../../store/tournamentStore";
 
 export default {
   name: "Tournaments",

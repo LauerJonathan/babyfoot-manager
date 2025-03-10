@@ -1,127 +1,66 @@
 <script setup>
-import { ref } from "vue";
+import { ref, onMounted } from "vue";
 import field from "../components/cards/field.vue";
-const matchesList = ref({
-  success: true,
-  data: [
-    {
-      id: 1,
-      homeTeamId: 3,
-      awayTeamId: 7,
-      homeTeam: {
-        id: 3,
-        name: "Les Titans",
-        logo: "titans_logo.png",
-      },
-      awayTeam: {
-        id: 7,
-        name: "Les Chatons",
-        logo: "chatons_logo.png",
-      },
-      tournamentId: 1,
-      playedDate: "2025-03-15T17:00:00.000Z",
-      location: "Terrain A",
-      status: "scheduled",
-      homeScore: 3,
-      awayScore: 1,
-    },
-    {
-      id: 2,
-      homeTeamId: 5,
-      awayTeamId: 2,
-      homeTeam: {
-        id: 5,
-        name: "Les Faucons",
-        logo: "faucons_logo.png",
-      },
-      awayTeam: {
-        id: 2,
-        name: "Les Loups",
-        logo: "loups_logo.png",
-      },
-      tournamentId: 1,
-      playedDate: "2025-03-16T16:30:00.000Z",
-      location: "Terrain B",
-      status: "scheduled",
-      homeScore: 3,
-      awayScore: 0,
-    },
-    {
-      id: 3,
-      homeTeamId: 4,
-      awayTeamId: 8,
-      homeTeam: {
-        id: 4,
-        name: "Les Dragons",
-        logo: "dragons_logo.png",
-      },
-      awayTeam: {
-        id: 8,
-        name: "Les Requins",
-        logo: "requins_logo.png",
-      },
-      tournamentId: 1,
-      playedDate: "2025-03-20T18:15:00.000Z",
-      location: "Terrain A",
-      status: "scheduled",
-      homeScore: 3,
-      awayScore: 5,
-    },
-    {
-      id: 4,
-      homeTeamId: 1,
-      awayTeamId: 6,
-      homeTeam: {
-        id: 1,
-        name: "Les Aigles",
-        logo: "aigles_logo.png",
-      },
-      awayTeam: {
-        id: 6,
-        name: "Les Lions",
-        logo: "lions_logo.png",
-      },
-      tournamentId: 1,
-      playedDate: "2025-03-22T15:45:00.000Z",
-      location: "Terrain C",
-      status: "scheduled",
-      homeScore: 3,
-      awayScore: 1,
-    },
-    {
-      id: 5,
-      homeTeamId: 9,
-      awayTeamId: 10,
-      homeTeam: {
-        id: 9,
-        name: "Les Panthères",
-        logo: "pantheres_logo.png",
-      },
-      awayTeam: {
-        id: 10,
-        name: "Les Comètes",
-        logo: "cometes_logo.png",
-      },
-      tournamentId: 1,
-      playedDate: "2025-03-25T19:00:00.000Z",
-      location: "Terrain B",
-      status: "scheduled",
-      homeScore: 8,
-      awayScore: 6,
-    },
-  ],
+import matchesStore from "../store/matchesStore"; // Store des matchs
+import teamsStore from "../store/teamsStore"; // Store des équipes
+import Standings from "../components/standings.vue";
+
+// Liste des matchs récupérés depuis le backend (les 6 derniers matchs)
+const matchesList = ref([]);
+
+// Fonction pour récupérer les 6 derniers matchs et enrichir avec les noms des équipes
+const fetchPreviousMatches = async () => {
+  try {
+    // Récupérer les derniers matchs
+    const previousMatches = await matchesStore.fetchPrevious();
+    console.log("Données récupérées :", previousMatches);
+
+    // Filtrer les matchs qui ont des scores valides
+    matchesList.value = previousMatches
+      .filter(
+        (match) =>
+          match.homeScore !== undefined && match.awayScore !== undefined
+      ) // Filtrer si les scores sont valides
+      .map((match) => {
+        console.log("Match avec scores :", match); // Log pour chaque match
+        return {
+          ...match,
+          homeTeamName: teamsStore.getTeamName(match.homeTeamId),
+          awayTeamName: teamsStore.getTeamName(match.awayTeamId),
+        };
+      });
+
+    // Si aucun match n'est trouvé après le filtrage
+    if (matchesList.value.length === 0) {
+      console.log("Aucun match valide trouvé.");
+    }
+  } catch (error) {
+    console.error("Erreur lors de la récupération des matchs : ", error);
+  }
+};
+
+// Appel de la fonction au montage du composant
+onMounted(() => {
+  fetchPreviousMatches();
 });
-import Podium from "../components/Podium.vue";
-import standings from "../components/standings.vue";
 </script>
 
 <template>
-  <h1>Les perf' de la semaine</h1>
-  <section class="cardsContainer">
-    <div class="card" v-for="match in matchesList.data" :key="match.id">
+  <h1>Les matchs passés</h1>
+
+  <!-- Afficher un message si aucun match n'est disponible -->
+  <section v-if="matchesList.length === 0" class="no-matches">
+    <p>Aucun match récent disponible.</p>
+  </section>
+
+  <!-- Affichage des matchs avec les noms des équipes -->
+  <section class="cardsContainer" v-else>
+    <div class="card" v-for="match in matchesList" :key="match.id">
+      <!-- Passage des matchs avec noms d'équipes -->
       <field :match="match" :score="true" />
     </div>
   </section>
+
   <section>
     <h1>Classement général :</h1>
     <standings />
@@ -141,6 +80,12 @@ import standings from "../components/standings.vue";
   display: block;
   width: 30%;
   margin: 40px 0;
+}
+.no-matches {
+  text-align: center;
+  font-size: 18px;
+  color: #666;
+  margin: 20px 0;
 }
 .standingInfos {
   display: flex;

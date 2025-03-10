@@ -2,23 +2,20 @@ const { Match, Team, Tournament, TournamentTeam } = require("../models");
 const { sequelize } = require("../config/database");
 const { Op } = require("sequelize");
 
-const getUpcomingWeekMatches = async (req, res) => {
+const getUpcomingFiveMatches = async (req, res) => {
   try {
     // Date actuelle
     const today = new Date();
 
-    // Date dans 7 jours
-    const nextWeek = new Date();
-    nextWeek.setDate(today.getDate() + 7);
-
     const upcomingMatches = await Match.findAll({
       where: {
-        playedDate: {
-          [Op.gte]: today, // Op.gte signifie "greater than or equal to"
-          [Op.lte]: nextWeek, // Op.lte signifie "less than or equal to"
+        scheduledDate: {
+          [Op.gte]: today, // Uniquement les matchs à venir
         },
+        status: "scheduled", // Optionnel: filtrer uniquement les matchs non-joués
       },
-      order: [["playedDate", "ASC"]], // Tri par date croissante
+      order: [["scheduledDate", "ASC"]], // Tri par date croissante
+      limit: 5, // Limiter à 5 résultats
     });
 
     res.status(200).json({
@@ -27,47 +24,37 @@ const getUpcomingWeekMatches = async (req, res) => {
       data: upcomingMatches,
     });
   } catch (error) {
-    console.error("Erreur récupération des matchs à venir:", error);
+    console.error("Erreur récupération des prochains matchs:", error);
     res.status(500).json({
       success: false,
-      message:
-        "Erreur lors de la récupération des matchs pour la semaine à venir",
+      message: "Erreur lors de la récupération des prochains matchs",
       error: error.message,
     });
   }
 };
 
-const getPastWeekMatches = async (req, res) => {
+const getLastSixMatches = async (req, res) => {
   try {
-    // Date actuelle
-    const today = new Date();
-    today.setHours(23, 59, 59, 999); // Fin de la journée actuelle
-
-    // Date il y a 7 jours
-    const lastWeek = new Date();
-    lastWeek.setDate(today.getDate() - 7);
-    lastWeek.setHours(0, 0, 0, 0); // Début de la journée il y a 7 jours
-
-    const pastMatches = await Match.findAll({
+    // Récupérer les 6 derniers matchs joués avec des scores, triés par date décroissante
+    const lastSixMatches = await Match.findAll({
       where: {
-        playedDate: {
-          [Op.gte]: lastWeek, // Matchs joués depuis 7 jours
-          [Op.lte]: today, // Jusqu'à aujourd'hui
-        },
+        homeScore: { [Op.ne]: null }, // homeScore n'est pas null
+        awayScore: { [Op.ne]: null }, // awayScore n'est pas null
       },
-      order: [["playedDate", "ASC"]], // Tri par date croissante
+      order: [["playedDate", "DESC"]], // Du plus récent au plus ancien
+      limit: 6, // Limiter à 6 résultats
     });
 
     res.status(200).json({
       success: true,
-      count: pastMatches.length,
-      data: pastMatches,
+      count: lastSixMatches.length,
+      data: lastSixMatches,
     });
   } catch (error) {
-    console.error("Erreur récupération des matchs passés:", error);
+    console.error("Erreur récupération des 6 derniers matchs:", error);
     res.status(500).json({
       success: false,
-      message: "Erreur lors de la récupération des matchs des 7 derniers jours",
+      message: "Erreur lors de la récupération des 6 derniers matchs",
       error: error.message,
     });
   }
@@ -406,8 +393,8 @@ const getTournamentStandings = async (req, res) => {
 };
 
 module.exports = {
-  getUpcomingWeekMatches,
-  getPastWeekMatches,
+  getUpcomingFiveMatches,
+  getLastSixMatches,
   getAllMatch,
   getTournamentMatches,
   updateMatchScore,

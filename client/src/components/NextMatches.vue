@@ -1,136 +1,49 @@
 <script setup>
-import { ref } from "vue";
+import { ref, onMounted, computed } from "vue";
 import field from "./cards/field.vue";
-const matchesList = ref({
-  success: true,
-  data: [
-    {
-      id: 1,
-      homeTeamId: 3,
-      awayTeamId: 7,
-      homeTeam: {
-        id: 3,
-        name: "Les Titans",
-        logo: "titans_logo.png",
-      },
-      awayTeam: {
-        id: 7,
-        name: "Les Chatons",
-        logo: "chatons_logo.png",
-      },
-      tournamentId: 1,
-      playedDate: "2025-03-15T17:00:00.000Z",
-      location: "Terrain A",
-      status: "scheduled",
-      homeScore: null,
-      awayScore: null,
-    },
-    {
-      id: 2,
-      homeTeamId: 5,
-      awayTeamId: 2,
-      homeTeam: {
-        id: 5,
-        name: "Les Faucons",
-        logo: "faucons_logo.png",
-      },
-      awayTeam: {
-        id: 2,
-        name: "Les Loups",
-        logo: "loups_logo.png",
-      },
-      tournamentId: 1,
-      playedDate: "2025-03-16T16:30:00.000Z",
-      location: "Terrain B",
-      status: "scheduled",
-      homeScore: null,
-      awayScore: null,
-    },
-    {
-      id: 3,
-      homeTeamId: 4,
-      awayTeamId: 8,
-      homeTeam: {
-        id: 4,
-        name: "Les Dragons",
-        logo: "dragons_logo.png",
-      },
-      awayTeam: {
-        id: 8,
-        name: "Les Requins",
-        logo: "requins_logo.png",
-      },
-      tournamentId: 1,
-      playedDate: "2025-03-20T18:15:00.000Z",
-      location: "Terrain A",
-      status: "scheduled",
-      homeScore: null,
-      awayScore: null,
-    },
-    {
-      id: 4,
-      homeTeamId: 1,
-      awayTeamId: 6,
-      homeTeam: {
-        id: 1,
-        name: "Les Aigles",
-        logo: "aigles_logo.png",
-      },
-      awayTeam: {
-        id: 6,
-        name: "Les Lions",
-        logo: "lions_logo.png",
-      },
-      tournamentId: 1,
-      playedDate: "2025-03-22T15:45:00.000Z",
-      location: "Terrain C",
-      status: "scheduled",
-      homeScore: null,
-      awayScore: null,
-    },
-    {
-      id: 5,
-      homeTeamId: 9,
-      awayTeamId: 10,
-      homeTeam: {
-        id: 9,
-        name: "Les Panthères",
-        logo: "pantheres_logo.png",
-      },
-      awayTeam: {
-        id: 10,
-        name: "Les Comètes",
-        logo: "cometes_logo.png",
-      },
-      tournamentId: 1,
-      playedDate: "2025-03-25T19:00:00.000Z",
-      location: "Terrain B",
-      status: "scheduled",
-      homeScore: null,
-      awayScore: null,
-    },
-  ],
-});
+import matchesStore from "../store/matchesStore";
+
+// Accès aux données du store
+const isLoading = computed(() => matchesStore.state.isLoading);
+const hasError = computed(() => matchesStore.state.error);
+const errorMessage = computed(() => matchesStore.state.error);
+const matchesList = computed(() => matchesStore.state.upcomingMatches);
+
+// Fonction pour charger les matchs depuis l'API
+const loadMatches = async () => {
+  try {
+    await matchesStore.fetchUpcomingMatches();
+  } catch (error) {
+    console.error("Erreur lors du chargement des matchs :", error);
+  }
+};
+
+// Charger les matchs au montage du composant
+onMounted(loadMatches);
 </script>
 
 <template>
   <section class="cardsContainer">
-    <div class="card" v-for="match in matchesList.data" :key="match.id">
+    <!-- Indicateur de chargement -->
+    <div v-if="isLoading" class="loading-overlay">
+      <div class="spinner"></div>
+      <p>Chargement des matchs...</p>
+    </div>
+
+    <!-- Message d'erreur -->
+    <div v-if="hasError" class="error-message">
+      <p>{{ errorMessage }}</p>
+      <button @click="loadMatches" class="retry-button">Réessayer</button>
+    </div>
+
+    <!-- Liste des matchs -->
+    <div class="card" v-for="match in matchesList" :key="match.id">
       <field :match="match" :score="false" />
     </div>
   </section>
 </template>
 
 <style scoped>
-ul {
-  width: max-content;
-  margin: 0 auto;
-  list-style: none;
-  padding: 0;
-}
-ul li {
-  text-align: left;
-}
 .cardsContainer {
   display: flex;
   flex-wrap: wrap;

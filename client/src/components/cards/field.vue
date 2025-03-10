@@ -1,6 +1,15 @@
 <script setup>
-import { onMounted, ref, watch } from "vue";
-const winner = ref("test");
+import { onMounted } from "vue";
+import teamsStore from "../../store/teamsStore"; // Import du store
+
+const formatDate = (dateString) => {
+  const date = new Date(dateString);
+  return date.toLocaleDateString("fr-FR", {
+    day: "2-digit",
+    month: "2-digit",
+  });
+};
+
 const props = defineProps({
   match: {
     type: Object,
@@ -11,43 +20,18 @@ const props = defineProps({
     required: true,
   },
 });
-const formatDate = (dateString) => {
-  const date = new Date(dateString);
-  return date.toLocaleDateString("fr-FR", {
-    day: "2-digit",
-    month: "2-digit",
-  });
-};
-const checkWinner = () => {
-  if (props.match.homeScore === null || props.match.awayScore === null) {
-    winner.value = "pending"; // Match pas encore joué
-    return;
-  }
 
-  if (props.match.homeScore > props.match.awayScore) {
-    winner.value = "home";
-  } else if (props.match.homeScore < props.match.awayScore) {
-    winner.value = "away";
-  } else {
-    winner.value = "draw";
-  }
-};
+// Charger les équipes si elles ne sont pas déjà récupérées
 onMounted(() => {
-  if (props.score) {
-    checkWinner();
+  if (teamsStore.state.teams.length === 0) {
+    teamsStore.fetchAllTeams();
   }
 });
 
-// Surveiller les changements de la prop score
-watch(
-  () => props.score,
-  (newValue) => {
-    if (newValue) {
-      checkWinner();
-    }
-  }
-);
+// Récupérer les noms des équipes directement depuis le store
+const getTeamName = (teamId) => teamsStore.getTeamName(teamId);
 </script>
+
 <template>
   <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 800 400">
     <!-- Cadre de la table de babyfoot -->
@@ -100,51 +84,6 @@ watch(
       fill="none"
       stroke="white"
       stroke-width="4" />
-
-    <!-- Barres -->
-    <line
-      x1="180"
-      y1="70"
-      x2="180"
-      y2="330"
-      stroke="#a1887f"
-      stroke-width="6" />
-    <line
-      x1="260"
-      y1="70"
-      x2="260"
-      y2="330"
-      stroke="#a1887f"
-      stroke-width="6" />
-    <line
-      x1="340"
-      y1="70"
-      x2="340"
-      y2="330"
-      stroke="#a1887f"
-      stroke-width="6" />
-
-    <line
-      x1="460"
-      y1="70"
-      x2="460"
-      y2="330"
-      stroke="#a1887f"
-      stroke-width="6" />
-    <line
-      x1="540"
-      y1="70"
-      x2="540"
-      y2="330"
-      stroke="#a1887f"
-      stroke-width="6" />
-    <line
-      x1="620"
-      y1="70"
-      x2="620"
-      y2="330"
-      stroke="#a1887f"
-      stroke-width="6" />
 
     <!-- Joueurs équipe gauche (orange) -->
     <circle
@@ -275,7 +214,7 @@ watch(
       font-weight="bold"
       fill="#ef854d"
       text-anchor="middle">
-      {{ match.homeTeam.name }} {{ winner === "home" ? "&nbsp; 🚀" : "" }}
+      {{ getTeamName(match.homeTeamId) }} {{ winner === "home" ? "🚀" : "" }}
     </text>
     <text
       x="580"
@@ -285,14 +224,10 @@ watch(
       font-weight="bold"
       fill="#2196f3"
       text-anchor="middle">
-      {{ match.awayTeam.name }} {{ winner === "away" ? " &nbsp; 🚀" : "" }}
+      {{ getTeamName(match.awayTeamId) }} {{ winner === "away" ? "🚀" : "" }}
     </text>
 
-    <!-- Poignées sur les côtés -->
-    <rect x="80" y="160" width="20" height="80" fill="#3e2723" rx="5" />
-    <rect x="700" y="160" width="20" height="80" fill="#3e2723" rx="5" />
-
-    <!-- Score -->
+    <!-- Score ou date du match -->
     <rect
       x="350"
       y="10"
@@ -304,47 +239,47 @@ watch(
       rx="5" />
     <text
       v-if="!score"
-      x="370"
-      y="38"
-      font-family="Arial"
-      font-size="24"
-      font-weight="bold"
-      fill="#ffffff">
-      {{ formatDate(match.playedDate) }}
-    </text>
-    <text
-      v-if="score"
-      x="370"
-      y="38"
-      font-family="Arial"
-      font-size="24"
-      font-weight="bold"
-      fill="#ef854d">
-      {{ match.homeScore ? match.homeScore : 0 }}
-    </text>
-    <text
-      v-if="score"
       x="400"
       y="38"
       font-family="Arial"
-      font-size="24"
+      font-size="20"
       font-weight="bold"
-      fill="#ffffff">
-      -
+      fill="#ffffff"
+      text-anchor="middle">
+      {{ formatDate(match.scheduledDate) }}
     </text>
-    <text
-      v-if="score"
-      x="420"
-      y="38"
-      font-family="Arial"
-      font-size="24"
-      font-weight="bold"
-      fill="#2196f3">
-      {{ match.awayScore ? match.awayScore : 0 }}
-    </text>
-    <!-- Ajout du numéro de terrain en dessous du babyfoot -->
-    <g v-if="!score">
-      <!-- Fond du badge de terrain -->
+    <g v-if="score">
+      <text
+        x="370"
+        y="38"
+        font-family="Arial"
+        font-size="24"
+        font-weight="bold"
+        fill="#ef854d">
+        {{ match.homeScore !== null ? match.homeScore : "--" }}
+      </text>
+      <text
+        x="400"
+        y="38"
+        font-family="Arial"
+        font-size="24"
+        font-weight="bold"
+        fill="#ffffff">
+        -
+      </text>
+      <text
+        x="420"
+        y="38"
+        font-family="Arial"
+        font-size="24"
+        font-weight="bold"
+        fill="#2196f3">
+        {{ match.awayScore !== null ? match.awayScore : "--" }}
+      </text>
+    </g>
+
+    <!-- Numéro de terrain (si dispo) -->
+    <g v-if="match.location">
       <rect
         x="350"
         y="360"
@@ -354,8 +289,6 @@ watch(
         fill="#121212"
         stroke="#ef854d"
         stroke-width="2" />
-
-      <!-- Texte du terrain -->
       <text
         x="400"
         y="382"

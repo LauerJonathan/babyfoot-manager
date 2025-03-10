@@ -1,82 +1,12 @@
 <script setup>
-import { ref } from "vue";
-const standing = ref({
-  success: true,
-  generalStandings: [
-    {
-      team: {
-        id: 1,
-        name: "Les Invincibles",
-        player1Name: "Thomas Dupont",
-        player2Name: "Marie Martin",
-        createdAt: "2025-03-07T16:46:22.000Z",
-        updatedAt: "2025-03-07T16:46:22.000Z",
-      },
-      totalPoints: 3,
-      totalMatchesPlayed: 1,
-      totalMatchesWon: 1,
-      totalMatchesLost: 0,
-      totalMatchesDraw: 0,
-      totalGoalsFor: 10,
-      totalGoalsAgainst: 8,
-      tournaments: 1,
-    },
-    {
-      team: {
-        id: 2,
-        name: "Foosballs",
-        player1Name: "Pierre Lambert",
-        player2Name: "Julie Dubois",
-        createdAt: "2025-03-07T16:46:37.000Z",
-        updatedAt: "2025-03-07T16:46:37.000Z",
-      },
-      totalPoints: 0,
-      totalMatchesPlayed: 1,
-      totalMatchesWon: 0,
-      totalMatchesLost: 1,
-      totalMatchesDraw: 0,
-      totalGoalsFor: 8,
-      totalGoalsAgainst: 10,
-      tournaments: 1,
-    },
-    {
-      team: {
-        id: 3,
-        name: "Foosballs",
-        player1Name: "Pierre Lambert",
-        player2Name: "Julie Dubois",
-        createdAt: "2025-03-07T16:46:37.000Z",
-        updatedAt: "2025-03-07T16:46:37.000Z",
-      },
-      totalPoints: 0,
-      totalMatchesPlayed: 1,
-      totalMatchesWon: 0,
-      totalMatchesLost: 1,
-      totalMatchesDraw: 0,
-      totalGoalsFor: 8,
-      totalGoalsAgainst: 10,
-      tournaments: 1,
-    },
-    {
-      team: {
-        id: 4,
-        name: "Foosballs",
-        player1Name: "Pierre Lambert",
-        player2Name: "Julie Dubois",
-        createdAt: "2025-03-07T16:46:37.000Z",
-        updatedAt: "2025-03-07T16:46:37.000Z",
-      },
-      totalPoints: 0,
-      totalMatchesPlayed: 1,
-      totalMatchesWon: 0,
-      totalMatchesLost: 1,
-      totalMatchesDraw: 0,
-      totalGoalsFor: 8,
-      totalGoalsAgainst: 10,
-      tournaments: 1,
-    },
-  ],
-});
+import { ref, onMounted } from "vue";
+import standingsStore from "../store/standingsStore";
+
+// État local pour afficher le chargement et les erreurs
+const isLoading = ref(false);
+const error = ref(null);
+
+// Fonction pour formater les noms des joueurs
 const formatName = (fullName) => {
   // Vérifie si le nom est valide
   if (!fullName || typeof fullName !== "string") {
@@ -98,13 +28,57 @@ const formatName = (fullName) => {
   // Retourner le format désiré
   return `${firstName}.${lastInitial}`;
 };
+
+// Fonction pour calculer la différence de buts
 const calculBd = (a, b) => {
   return a - b;
 };
+
+// Charger les données du classement au montage du composant
+onMounted(async () => {
+  isLoading.value = true;
+  error.value = null;
+
+  try {
+    await standingsStore.fetchGeneralStandings();
+  } catch (err) {
+    error.value = err;
+    console.error("Erreur lors du chargement du classement:", err);
+  } finally {
+    isLoading.value = false;
+  }
+});
 </script>
 
 <template>
-  <table>
+  <!-- Indicateur de chargement -->
+  <div v-if="isLoading" class="loading">
+    <div class="spinner"></div>
+    <p>Chargement du classement...</p>
+  </div>
+
+  <!-- Message d'erreur -->
+  <div v-else-if="error" class="error-message">
+    <p>{{ error }}</p>
+    <button
+      @click="standingsStore.fetchGeneralStandings()"
+      class="retry-button">
+      Réessayer
+    </button>
+  </div>
+
+  <!-- Aucune donnée disponible -->
+  <div
+    v-else-if="
+      !standingsStore.state.generalStandings ||
+      standingsStore.state.generalStandings.length === 0
+    "
+    class="no-data">
+    <p>Aucune donnée de classement disponible</p>
+  </div>
+
+  <!-- Tableau du classement -->
+  <table v-else>
     <thead>
       <tr>
         <th>Team</th>
@@ -116,7 +90,9 @@ const calculBd = (a, b) => {
       </tr>
     </thead>
     <tbody>
-      <tr v-for="team in standing.generalStandings" :key="team.team.id">
+      <tr
+        v-for="team in standingsStore.state.generalStandings"
+        :key="team.team.id">
         <td>{{ team.team.name }}</td>
         <td>
           {{
@@ -142,6 +118,59 @@ h1 {
   font-size: 1.8rem;
   margin-bottom: 1.5rem;
   text-align: center;
+}
+
+/* Styles pour le chargement et les messages d'erreur */
+.loading,
+.error-message,
+.no-data {
+  text-align: center;
+  padding: 20px;
+  margin: 20px auto;
+  width: 75%;
+}
+
+.spinner {
+  width: 40px;
+  height: 40px;
+  border: 4px solid rgba(239, 133, 77, 0.1);
+  border-radius: 50%;
+  border-top: 4px solid #ef854d;
+  animation: spin 1s linear infinite;
+  margin: 0 auto 10px;
+}
+
+@keyframes spin {
+  0% {
+    transform: rotate(0deg);
+  }
+  100% {
+    transform: rotate(360deg);
+  }
+}
+
+.error-message {
+  color: #f44336;
+}
+
+.retry-button {
+  background-color: #ef854d;
+  color: white;
+  border: none;
+  padding: 8px 16px;
+  border-radius: 4px;
+  margin-top: 10px;
+  cursor: pointer;
+  transition: background-color 0.3s;
+}
+
+.retry-button:hover {
+  background-color: #d67642;
+}
+
+.no-data {
+  color: #777;
+  font-style: italic;
 }
 
 table {

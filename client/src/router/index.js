@@ -61,6 +61,11 @@ const routes = [
         name: "adminResults",
         component: () => import("../views/admin/Results.vue"),
       },
+      {
+        path: "/admin/tournaments/:id",
+        name: "TournamentDetails",
+        component: () => import("../views/TournamentDetails.vue"),
+      },
     ],
   },
 ];

@@ -7,7 +7,7 @@ const state = reactive({
   isLoading: false,
   error: null,
   registrationSuccess: false,
-  lastFetched: null, // Nouvelle propriété pour suivre le dernier chargement
+  lastFetched: null,
 });
 
 // Méthodes
@@ -60,6 +60,10 @@ const methods = {
     } finally {
       state.isLoading = false;
     }
+  },
+  getTeamName: (teamId) => {
+    const team = state.teams.find((t) => t.id === teamId);
+    return team ? team.name : "Équipe inconnue";
   },
 
   resetRegistrationStatus() {
